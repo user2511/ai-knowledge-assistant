@@ -5,6 +5,7 @@ import os
 import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.services.pdf_service import extract_text_from_pdf
+from app.services.embedding_service import embed_and_store
 
 router = APIRouter()
 
@@ -24,8 +25,17 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     text = extract_text_from_pdf(file_path)
 
+    if not text.strip():
+        return {
+            "status": "error",
+            "message": "No text extracted from PDF"
+        }
+
+    # 🔥 LAYER 2 CALL
+    chunk_count = embed_and_store(text)
+
     return {
-        "file_id": file_id,
-        "text_length": len(text),
-        "preview": text[:500]
+        "status": "success",
+        "filename": file.filename,
+        "chunks_created": chunk_count
     }

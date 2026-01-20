@@ -7,5 +7,5 @@ def extract_text_from_pdf(file_path: str) -> str:
     for page in reader.pages:
         if page.extract_text():
             text += page.extract_text()
-
+     
     return text
