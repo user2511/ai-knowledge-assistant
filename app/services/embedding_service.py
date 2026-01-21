@@ -1,13 +1,14 @@
 import os
 import faiss
 import numpy as np
-from openai import OpenAI
+#from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 
 # OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+#client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# OpenAI embedding dimension
-EMBEDDING_DIM = 1536
+EMBEDDING_DIM = model.get_sentence_embedding_dimension()
 
 # FAISS index (in-memory)
 index = faiss.IndexFlatL2(EMBEDDING_DIM)
@@ -46,15 +47,44 @@ def embed_and_store(text: str) -> int:
     embeddings = []
 
     for chunk in chunks:
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=chunk
-        )
-        vector = response.data[0].embedding
-        embeddings.append(vector)
+        embeddings = model.encode(chunks)
+
+    # Store chunks + vectors
+    for chunk, vector in zip(chunks, embeddings):
         documents.append(chunk)
 
-    vectors = np.array(embeddings).astype("float32")
-    index.add(vectors)
+    vectors_np = np.array(embeddings).astype("float32")
+    index.add(vectors_np)
+
+
+    #     response = client.embeddings.create(
+    #         model="text-embedding-3-small",
+    #         input=chunk
+    #     )
+    #     vector = response.data[0].embedding
+    #     embeddings.append(vector)
+    #     documents.append(chunk)
+
+    # vectors = np.array(embeddings).astype("float32")
+    # index.add(vectors)
 
     return len(chunks)
+
+def search_similar_chunks(query: str, top_k: int = 5):
+    """
+    Embed query and retrieve top-k similar chunks
+    """
+    if index.ntotal == 0:
+        return []
+
+    query_vector = model.encode([query]).astype("float32")
+
+    distances, indices = index.search(query_vector, top_k)
+
+    results = []
+    for idx in indices[0]:
+        if idx < len(documents):
+            results.append(documents[idx])
+
+    return results
+

@@ -3,8 +3,9 @@ uvicorn
 python-dotenv
 pypdf
 python-multipart
+
 faiss-cpu
 openai
 tiktoken
 python-dotenv
-
+sentence-transformers
