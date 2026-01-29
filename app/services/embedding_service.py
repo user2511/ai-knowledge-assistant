@@ -3,6 +3,7 @@ import faiss
 import numpy as np
 #from openai import OpenAI
 from sentence_transformers import SentenceTransformer
+from app.services.vector_store import VECTOR_STORE
 
 # OpenAI client
 #client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -47,26 +48,28 @@ def embed_and_store(text: str) -> int:
     embeddings = []
 
     for chunk in chunks:
-        embeddings = model.encode(chunks)
+        embedding = model.encode(chunk)
+        embeddings.append(embedding)
+
+        VECTOR_STORE.append({
+            "text": chunk,
+            "embedding": embedding
+        })
+
 
     # Store chunks + vectors
     for chunk, vector in zip(chunks, embeddings):
         documents.append(chunk)
 
+        
+
+        
+
     vectors_np = np.array(embeddings).astype("float32")
     index.add(vectors_np)
 
 
-    #     response = client.embeddings.create(
-    #         model="text-embedding-3-small",
-    #         input=chunk
-    #     )
-    #     vector = response.data[0].embedding
-    #     embeddings.append(vector)
-    #     documents.append(chunk)
-
-    # vectors = np.array(embeddings).astype("float32")
-    # index.add(vectors)
+    
 
     return len(chunks)
 

@@ -9,3 +9,5 @@ openai
 tiktoken
 
 sentence-transformers
+streamlit
+requests
